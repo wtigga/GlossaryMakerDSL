@@ -4,7 +4,7 @@ from datetime import datetime
 import codecs
 from sources import excel_file_local, output_file_dsl_local
 
-#This is a script to create a DSL dictionary from crappy source translation files.
+#This is a script to create a DSL dictionary from crappy source translation files.1
 
 def current_date():
     # Get the current date
