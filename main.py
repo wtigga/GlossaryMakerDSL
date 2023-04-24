@@ -2,10 +2,15 @@ import re
 import pandas as pd
 from datetime import datetime
 import codecs
-from sources import excel_file_local, output_file_dsl_local, tm_file_local, tb_file_local, live_file_local
+from sources import excel_file_local, output_file_dsl_local, tm_file_local, tb_file_local, live_file_local, output_file_excel_local
+import tkinter as tk
+from tkinter import ttk
+from tkinter import filedialog
+import sys
+import xlsxwriter
 
 
-# This is a script to create a DSL dictionary from crappy source translation files.1
+# This is a script to create a DSL dictionary from crappy source translation files.
 
 def current_date():
     # Get the current date
@@ -18,9 +23,12 @@ def current_date():
 
 today = current_date()
 source_lang_column_name = 'CHS'
-comment_column_name = 'EXTRA'
 target_lang_column_name = 'RU'
+comment_column_name = 'EXTRA'
+
+list_of_columns = ['CHS', 'RU', 'Origin', 'Translation', 'EXTRA']
 excel_file_path = excel_file_local
+output_excel_file_path = output_file_excel_local
 tm_file = tm_file_local
 tb_file = tb_file_local
 live_file = live_file_local
@@ -36,6 +44,11 @@ html_pattern = r'<[^>]*>'
 sprite_pattern = r'\{SPRITE_PRESET#[\d]+\}'
 tb_origin_column_name = 'Origin'
 tb_translation_column_name = 'Translation'
+main_dict_for_output = {}
+code_and_source_output = {}
+live_source_and_translation_output = {}
+enriched_output = {}
+missing_text = 'The text is missing'
 
 
 # General functions
@@ -173,7 +186,7 @@ def extract_source_translation(excel_filepath, source_lang, target_lang):
     return translation_dict
 
 
-def save_dictionaries_to_file_v4(dict1, dict2, dsl_header, file_name, missing):
+def save_dictionaries_to_file_v4(dict1, dict2, file_name, missing=missing_text, dsl_header=dsl_header_list):
     # it is important to save as UTF-16 LE BOM, otherwise GoldenDict will not recognize the dictionary.
     try:
         with open(file_name, "w", encoding="utf-16-le") as output_file:
@@ -274,51 +287,264 @@ def merge_dictionaries_overwrite_empty(dict1, dict2):
     return new_dict
 
 
-# USAGE
+def code_and_source_function(filename,
+                             source,
+                             comment,
+                             key_regex=key_pattern_regex,
+                             value_regex=value_pattern_regex,
+                             html_regex=html_pattern,
+                             sprite_regex=sprite_pattern,
+                             numeric_regex=numeric_pattern):
+
+    result = extract_key_value_pairs(filename,
+                                     source,
+                                     comment,
+                                     key_regex,
+                                     value_regex)
+    result = clean_and_remove_numeric_values(result,
+                                             html_regex,
+                                             sprite_regex,
+                                             numeric_regex)
+    result_sorted = {k: v for k, v in sorted(result.items())}
+    print('Code snippets and source language compilation complete')
+    return result_sorted
 
 
-code_and_source_language = extract_key_value_pairs(excel_file_path,
-                                                   source_lang_column_name,
-                                                   comment_column_name,
-                                                   key_pattern_regex,
-                                                   value_pattern_regex)
-code_and_source_language = clean_and_remove_numeric_values(code_and_source_language,
-                                                           html_pattern,
-                                                           sprite_pattern,
-                                                           numeric_pattern)
-code_and_source_language_sorted = {k: v for k, v in sorted(code_and_source_language.items())}
-print('Source code finished')
-# print_key_value_pairs(code_and_source_language)
+def source_and_translation_function(filename,
+                                    source,
+                                    target,
+                                    html_regex=html_pattern,
+                                    sprite_regex=sprite_pattern,
+                                    numeric_regex=numeric_pattern):
+
+    result = extract_source_translation(filename, source, target)
+    result = clean_and_remove_numeric_values(result, html_regex, sprite_regex, numeric_regex)
+    result = clean_keys_and_remove_numeric_values(result, html_regex, sprite_regex)
+    result_sorted = {k: v for k, v in sorted(result.items())}
+    print('Source and translation combining complete')
+    return result_sorted
+
+# INTERFACE GUI
+
+def browse_file():
+    file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
+    if file_path:
+        excel_file_path.set(file_path)
+        file_path_entry.config(state="normal")
+        file_path_entry.delete(0, tk.END)
+        file_path_entry.insert(0, file_path)
+        file_path_entry.config(state="readonly")
+
+def browse_file_live():
+    file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
+    if file_path:
+        live_file.set(file_path)
+        live_file_path_entry.config(state="normal")
+        live_file_path_entry.delete(0, tk.END)
+        live_file_path_entry.insert(0, file_path)
+        live_file_path_entry.config(state="readonly")
+
+def browse_dsl_output():
+    file_path = filedialog.asksaveasfilename(filetypes=[("DSL Lingvo Dict", "*.dsl")])
+    if file_path:
+        output_file_dsl.set(file_path)
+        file_path_entry_output_dsl.config(state="normal")
+        file_path_entry_output_dsl.delete(0, tk.END)
+        file_path_entry_output_dsl.insert(0, file_path)
+        file_path_entry_output_dsl.config(state="readonly")
+
+def browse_file_excel_output():
+    file_path = filedialog.asksaveasfilename(filetypes=[("Excel files", "*.xlsx")])
+    if file_path:
+        output_excel_file_path.set(file_path)
+        file_path_entry_output.config(state="normal")
+        file_path_entry_output.delete(0, tk.END)
+        file_path_entry_output.insert(0, file_path)
+        file_path_entry_output.config(state="readonly")
+class TextRedirector:
+    def __init__(self, widget):
+        self.widget = widget
+
+    def write(self, string):
+        self.widget.insert(tk.END, string)
+        self.widget.see(tk.END)
+
+    def flush(self):
+        pass
+
+def source_lang_selection(event):
+    selected_source_lang = source_lang_var.get()
+    global source_lang_column_name
+    source_lang_column_name = selected_source_lang
+    print("Selected source language:", source_lang_column_name)
 
 
-live_source_and_translation = extract_source_translation(live_file,
-                                                         source_lang_column_name,
-                                                         target_lang_column_name)
-live_source_and_translation = clean_and_remove_numeric_values(live_source_and_translation,
-                                                              html_pattern,
-                                                              sprite_pattern,
-                                                              numeric_pattern)
-live_source_and_translation = clean_keys_and_remove_numeric_values(live_source_and_translation,
-                                                                   html_pattern,
-                                                                   sprite_pattern)
-print('Live finished')
+def target_lang_selection(event):
+    selected_target_lang = target_lang_var.get()
+    global target_lang_column_name
+    target_lang_column_name = selected_target_lang
+    print("Selected target language:", target_lang_column_name)
 
-current_source_and_translation = extract_source_translation(excel_file_path,
-                                                            source_lang_column_name,
-                                                            target_lang_column_name)
-current_source_and_translation = clean_and_remove_numeric_values(current_source_and_translation,
-                                                                 html_pattern,
-                                                                 sprite_pattern,
-                                                                 numeric_pattern)
-current_source_and_translation = clean_keys_and_remove_numeric_values(current_source_and_translation,
-                                                                      html_pattern,
-                                                                      sprite_pattern)
+def comment_selection(event):
+    selected_comment = comment_var.get()
+    global comment_column_name
+    comment_column_name = selected_comment
+    print("Selected comment:", comment_column_name)
 
-merged_current = merge_dictionaries(code_and_source_language, current_source_and_translation)
-merged_live = merge_dictionaries(code_and_source_language, live_source_and_translation)
 
-final = merge_dictionaries_overwrite_empty(merged_current, merged_live)
-final_sorted = {k: v for k, v in sorted(final.items())}
-print_key_value_pairs(final_sorted)
+def first_execute():
+    print("Button pressed")
+    global code_and_source_output
+    global main_dict_for_output
+    code_and_source_language = code_and_source_function(excel_file_path.get(), source_lang_column_name, comment_column_name)
+    code_and_source_output = code_and_source_language
+    current_source_and_translation = source_and_translation_function(excel_file_path.get(), source_lang_column_name, target_lang_column_name)
+    merged_current = merge_dictionaries(code_and_source_language, current_source_and_translation)
+    main_dict_for_output = merged_current
+    print_key_value_pairs(main_dict_for_output)
 
-print_key_value_pairs(code_and_source_language_sorted)
+def enrich_translation():
+    print("Second enrich button pressed")
+    global live_source_and_translation
+    global enriched_output
+    global main_dict_for_output
+    live_source_and_translation = source_and_translation_function(live_file.get(), source_lang_column_name, target_lang_column_name)
+    merged_live = merge_dictionaries(code_and_source_output, live_source_and_translation)
+    final = merge_dictionaries_overwrite_empty(main_dict_for_output, merged_live)
+    main_dict_for_output = final
+    print_key_value_pairs(main_dict_for_output)
+
+def dicts_to_excel(dict1, dict2, source_lang, target_lang, output_excel_path):
+    # Create a DataFrame from the dictionaries
+    data = {'CODE': list(dict1.keys()), source_lang: list(dict1.values()), target_lang: list(dict2.values())}
+    df = pd.DataFrame(data)
+
+    # Save the DataFrame to an Excel file
+    writer = pd.ExcelWriter(output_excel_path, engine='xlsxwriter')
+    df.to_excel(writer, index=False, sheet_name='Sheet1')
+
+    # Set column widths and freeze the header row
+    workbook = writer.book
+    worksheet = writer.sheets['Sheet1']
+    worksheet.freeze_panes(1, 0)
+    worksheet.set_column(0, 0, 40)
+    worksheet.set_column(1, 1, 40)
+    worksheet.set_column(2, 2, 40)
+
+    # Save and close the Excel file
+    writer.close()
+    print('File saved')
+
+def save_to_excel():
+    dicts_to_excel(code_and_source_output, main_dict_for_output, source_lang_column_name, target_lang_column_name, output_excel_file_path.get())
+
+def save_to_dsl():
+    save_dictionaries_to_file_v4(code_and_source_output, main_dict_for_output, output_file_dsl.get())
+    print('Saved to DSL!')
+
+# Initialize the main window
+root = tk.Tk()
+root.geometry("500x600")
+root.title("Excel Processing")
+
+# Upper part with 'Preparation' title
+preparation_label = ttk.Label(root, text="GCG Term Extractor", font=("Helvetica", 14))
+preparation_label.grid(row=0, column=0, pady=20, padx=20, columnspan=2)
+
+# Browse button and file path entry
+browse_button = ttk.Button(root, text="Browse File 1", command=browse_file)
+browse_button.grid(row=1, column=0, padx=20, sticky='w')
+
+excel_file_path = tk.StringVar()
+file_path_entry = ttk.Entry(root, textvariable=excel_file_path, state="readonly", width=50)
+file_path_entry.grid(row=1, column=1, padx=20, sticky='w')
+
+# Dropdown menus
+# Create StringVar for each dropdown menu
+source_lang_var = tk.StringVar(root, name="source_lang")
+target_lang_var = tk.StringVar(root, name="target_lang")
+comment_var = tk.StringVar(root, name="comment")
+
+# Set default values for StringVars
+source_lang_var.set(source_lang_column_name)
+target_lang_var.set(target_lang_column_name)
+comment_var.set(comment_column_name)
+
+# Create dropdown menus
+source_lang_combobox = ttk.Combobox(root, textvariable=source_lang_var, values=list_of_columns, state='readonly')
+source_lang_combobox.bind("<<ComboboxSelected>>", source_lang_selection)
+
+target_lang_combobox = ttk.Combobox(root, textvariable=target_lang_var, values=list_of_columns, state='readonly')
+target_lang_combobox.bind("<<ComboboxSelected>>", target_lang_selection)
+
+
+comment_combobox = ttk.Combobox(root, textvariable=comment_var, values=list_of_columns, state='readonly')
+comment_combobox.bind("<<ComboboxSelected>>", comment_selection)
+
+
+# Set the grid positions for dropdown menus
+source_lang_label = ttk.Label(root, text="Source lang:")
+source_lang_label.grid(row=2, column=0, sticky="E", padx=(20, 0), pady=10)
+source_lang_combobox.grid(row=2, column=1, sticky='W', padx=20)
+
+
+target_lang_label = ttk.Label(root, text="Target lang:")
+target_lang_label.grid(row=3, column=0, sticky="E", padx=(20, 0), pady=10)
+target_lang_combobox.grid(row=3, column=1, sticky='W', padx=20)
+
+comment_label = ttk.Label(root, text="Comment:")
+comment_label.grid(row=4, column=0, sticky="E", padx=(20, 0), pady=10)
+comment_combobox.grid(row=4, column=1, sticky='W', padx=20)
+
+# Create the Execute button
+execute_button = ttk.Button(root, text="Process file", command=first_execute)
+execute_button.grid(row=5, column=0, padx=20, pady=5, sticky='w')
+
+# Create save button
+save_excel_button = ttk.Button(root, text="Save to Excel", command=save_to_excel)
+save_excel_button.grid(row=13, column=0, padx=20, pady=5, sticky='w')
+
+# Browse output file  and file path entry
+browse_button = ttk.Button(root, text="Output Excel", command=browse_file_excel_output)
+browse_button.grid(row=7, column=0, padx=20, sticky='w')
+output_excel_file_path = tk.StringVar()
+file_path_entry_output = ttk.Entry(root, textvariable=output_excel_file_path, state="readonly", width=50)
+file_path_entry_output.grid(row=7, column=1, padx=20, sticky='w')
+
+# Browse live input file and file path entry
+live_browse_button = ttk.Button(root, text="Browse 2nd Excel", command=browse_file_live)
+live_browse_button.grid(row=9, column=0, padx=20, sticky='w')
+live_file = tk.StringVar()
+live_file_path_entry = ttk.Entry(root, textvariable=live_file, state="readonly", width=50)
+live_file_path_entry.grid(row=9, column=1, padx=20, sticky='w')
+
+
+# Create the Enrich button
+enrich_button = ttk.Button(root, text="Enrich", command=enrich_translation)
+enrich_button.grid(row=10, column=0, padx=20, pady=5, sticky='w')
+
+# Browse output file DSL  and file path entry
+browse_button_dsl = ttk.Button(root, text="Output DSL", command=browse_dsl_output)
+browse_button_dsl.grid(row=11, column=0, padx=20, sticky='w')
+output_file_dsl = tk.StringVar()
+file_path_entry_output_dsl = ttk.Entry(root, textvariable=output_file_dsl, state="readonly", width=50)
+file_path_entry_output_dsl.grid(row=11, column=1, padx=20, sticky='w')
+
+# Create the Enrich button
+dsl_button = ttk.Button(root, text="Save to DSL", command=save_to_dsl)
+dsl_button.grid(row=12, column=0, padx=20, pady=5, sticky='w')
+
+# Add a text widget for displaying print output
+output_text = tk.Text(root, wrap="word", height=10, width=50)
+output_text.grid(row=14, column=0, columnspan=2, padx=20, pady=(30, 10), sticky='w')
+
+# Create a scrollbar and attach it to the text widget
+scrollbar = ttk.Scrollbar(root, command=output_text.yview)
+scrollbar.grid(row=14, column=2, sticky="w", padx=0)
+output_text.config(yscrollcommand=scrollbar.set)
+
+# Redirect stdout to the text widget
+sys.stdout = TextRedirector(output_text)
+
+# Start the main loop
+root.mainloop()
