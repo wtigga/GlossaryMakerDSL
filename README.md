@@ -1,8 +1,5 @@
 # **Game Code Snippets Tool**
 
-![image](https://user-images.githubusercontent.com/7037184/234344587-228da490-5701-4fec-ba71-1ac4f562b596.png)
-
-
 ### Description
 
     • This tool will extract all the code snippets defined by regex, find their corresponding meaning in source and target language, and save as a glossary in Excel or as a dictionary in DSL (GoldenDict-compatible).
@@ -10,6 +7,8 @@
     • It was created specifically for the needs of the Russian Localization team of Genshin Impact, but can be used by other languages as well.
     • It runs locally and does not transfer any data outside of your computer.
     • It is written in Python, but it doesn't require Python to be installed on your machine. It is  compiled into an *.exe to run on any machine. It can be compiled for other platforms (macOS, Linux, etc.) from the source code.
+    
+![image](https://user-images.githubusercontent.com/7037184/234344793-3c510335-06fe-4eca-b9b0-5a0c1c4d64fd.png)
 
 ### What it does
 
