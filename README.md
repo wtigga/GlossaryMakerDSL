@@ -30,3 +30,5 @@ Finally, it stores it as either bilingual Excel or a GoldenDict / Lingvo diction
     3. While you're in the browser CAT and stumble upon a code snippet, copy (Ctrl+C) the code and use the hotkey (like Ctrl+C+C defined above) to call GoldenDict:
     4. Click on the 'Close words':
     
+ ### Notes for developers
+ This script uses a bunch of dicts instead of fancy Pandas because I'm not a real developer. But the script gets the job done for my case, and that's what matters.
