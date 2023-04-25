@@ -356,7 +356,8 @@ def browse_folder():
 
 
 def browse_dsl_output():
-    file_path = filedialog.asksaveasfilename(filetypes=[("DSL Lingvo Dict", "*.dsl")])
+    default_name = "dictionary_" + source_lang_column_name + "_" + target_lang_column_name + "_" + str(today) + ".dsl"
+    file_path = filedialog.asksaveasfilename(filetypes=[("DSL Lingvo Dict", "*.dsl")], defaultextension=".dsl", initialfile=default_name)
     if file_path:
         output_file_dsl.set(file_path)
         file_path_entry_output_dsl.config(state="normal")
@@ -366,7 +367,8 @@ def browse_dsl_output():
 
 
 def browse_file_excel_output():
-    file_path = filedialog.asksaveasfilename(filetypes=[("Excel files", "*.xlsx")])
+    default_name = "glossary_" + source_lang_column_name + "_" + target_lang_column_name + "_" + str(today) + ".xlsx"
+    file_path = filedialog.asksaveasfilename(filetypes=[("Excel files", "*.xlsx")], defaultextension=".xlsx", initialfile=default_name)
     if file_path:
         output_excel_file_path.set(file_path)
         file_path_entry_output.config(state="normal")
