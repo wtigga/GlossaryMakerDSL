@@ -32,3 +32,8 @@ Finally, it stores it as either bilingual Excel or a GoldenDict / Lingvo diction
     
  ### Notes for developers
  This script uses a bunch of dicts instead of fancy Pandas because I'm not a real developer. But the script gets the job done for my case, and that's what matters.
+ To compile the file into the Windows executable:
+
+ pyinstaller --onefile --noconsole --upx-dir "c:\Soft\upx-4.0.2-win64" --name gcg_glossary_maker main.py
+
+(Replace the '--upx-dir' with the actual path to the UPX executable.)

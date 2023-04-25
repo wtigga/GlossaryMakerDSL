@@ -35,14 +35,12 @@ source_lang_column_name = 'CHS'
 target_lang_column_name = 'RU'
 comment_column_name = 'EXTRA'
 
-list_of_columns = ['CHS', 'RU', 'EXTRA', 'Origin', 'Translation', 'en', 'kr', 'cht', 'jp', 'th', 'vi', 'id', 'es', 'ru',
-                   'pt', 'de', 'fr', 'CHT', 'DE', 'EN', 'ES', 'FR', 'ID', 'JP', 'KR', 'PT', 'RU', 'TH', 'VI', 'TR',
-                   'IT']
+list_of_columns = ['CHS', 'RU', 'EXTRA', 'EN', 'Origin', 'Translation', 'CHT', 'DE', 'ES', 'FR', 'ID', 'JP', 'KR', 'PT',
+                   'RU', 'TH', 'VI', 'TR',
+                   'IT', 'en', 'kr', 'cht', 'jp', 'th', 'vi', 'id', 'es', 'ru',
+                   'pt', 'de', 'fr']
 excel_file_path = ""
 output_excel_file_path = ""
-tm_file = ""
-tb_file = ""
-live_file = ""
 dsl_header_1 = '#NAME "GCG Glossary ' + today + '. Made with ' + script_name + '"'
 dsl_header_2 = '#INDEX_LANGUAGE "' + source_lang_column_name + '"'
 dsl_header_3 = '#CONTENTS_LANGUAGE "' + target_lang_column_name + '"'
@@ -357,7 +355,8 @@ def browse_folder():
 
 def browse_dsl_output():
     default_name = "dictionary_" + source_lang_column_name + "_" + target_lang_column_name + "_" + str(today) + ".dsl"
-    file_path = filedialog.asksaveasfilename(filetypes=[("DSL Lingvo Dict", "*.dsl")], defaultextension=".dsl", initialfile=default_name)
+    file_path = filedialog.asksaveasfilename(filetypes=[("DSL Lingvo Dict", "*.dsl")], defaultextension=".dsl",
+                                             initialfile=default_name)
     if file_path:
         output_file_dsl.set(file_path)
         file_path_entry_output_dsl.config(state="normal")
@@ -368,7 +367,8 @@ def browse_dsl_output():
 
 def browse_file_excel_output():
     default_name = "glossary_" + source_lang_column_name + "_" + target_lang_column_name + "_" + str(today) + ".xlsx"
-    file_path = filedialog.asksaveasfilename(filetypes=[("Excel files", "*.xlsx")], defaultextension=".xlsx", initialfile=default_name)
+    file_path = filedialog.asksaveasfilename(filetypes=[("Excel files", "*.xlsx")], defaultextension=".xlsx",
+                                             initialfile=default_name)
     if file_path:
         output_excel_file_path.set(file_path)
         file_path_entry_output.config(state="normal")
@@ -431,7 +431,9 @@ def batch_processing(file_list, source_lang, target_lang, comment_column):
 
     main_dict_for_output = merge_dictionaries(code_and_source_full, source_and_translation_full)
     code_and_source_output = code_and_source_full
-    showinfo("Processing Complete", "Processing is now complete.")
+    showinfo("Processing Complete",
+             "Processing is now complete.\nFiles processed: " + str(file_count) + "\nItems found: " + str(
+                 len(main_dict_for_output)))
     progress['value'] = 0
     return None
 
@@ -442,7 +444,8 @@ def batch_execute():
 
 
 def start_batch_processing():
-    task_thread = threading.Thread(target=batch_processing, args=(folder_content_files, source_lang_column_name, target_lang_column_name, comment_column_name))
+    task_thread = threading.Thread(target=batch_processing, args=(
+    folder_content_files, source_lang_column_name, target_lang_column_name, comment_column_name))
     task_thread.start()
 
 
@@ -468,18 +471,25 @@ def dicts_to_excel(dict1, dict2, source_lang, target_lang, output_excel_path):
 
 
 def save_to_excel():
-    dicts_to_excel(code_and_source_output, main_dict_for_output, source_lang_column_name, target_lang_column_name,
-                   output_excel_file_path.get())
+    try:
+        dicts_to_excel(code_and_source_output, main_dict_for_output, source_lang_column_name, target_lang_column_name,
+                       output_excel_file_path.get())
+        print('Saved successful')
+    except Exception as e:
+        print(f'An error occurred: {e}')
 
 
 def save_to_dsl():
-    save_dictionaries_to_file_v4(code_and_source_output, main_dict_for_output, output_file_dsl.get())
-    print('Saved to DSL!')
+    try:
+        save_dictionaries_to_file_v4(code_and_source_output, main_dict_for_output, output_file_dsl.get())
+        print('Saved to DSL!')
+    except Exception as e:
+        print(f'An error occurred: {e}')
 
 
 # Initialize the main window
 root = tk.Tk()
-root.geometry("450x700")
+root.geometry("440x680")
 root.title(script_name)
 
 # Upper part with 'Preparation' title
@@ -588,8 +598,41 @@ label = tk.Label(root, text="This tool parse all <XLSX> files in the folder, ext
                             "\nand saves as a simple spreadsheet and DSL (dictionary).", justify="left")
 label.grid(row=18, column=0, padx=20, pady=0, sticky='W')
 
-# Start the main loop
-root.mainloop()
-
 '''While the logic and the architecture are products of the author's thinking capabilities,
 some of the functions in this code were written with the help of OpenAi's ChatGPT 4.'''
+
+ascii_art = r"""
+                         ..                                          #@@@%+-::...    :              
+                       ..                                          .*@@@@@@@@@@@-     .             
+                      :             ..                            -%@@@@@@@@%%@*       ..           
+                    ..          ..  .           . .                 .=#@@%@@@%@:.       ..          
+                   .          ..   .           .  .                    :*@@@@%@  ..      .:         
+         .       ..          :     :          .    :                   . .#@@@@    :       :.       
+          .    .:          :.     :           :     :                   :  =@@@     :        ..     
+           .  :.          :       :          -       :.                 -   :%@-     :         ...  
+            .:           :        :          :        .:                ..    #%      :            .
+           ..           :         .         :           :.               :     *-     ..    .       
+          ..          .:           :        :            .:              :      =.     :     : .....
+          :           -            ..       :              ...          :.              :    ..     
+         -            +-*@###%#*+:  :.      :       .::::.    ...       -               ..    :     
+        :             -*.   #@@@@@@- ..     :   :*%%@@@@@@@@%=   ...    -                :     :    
+        :             =.   -@@# =@@-  ..    :   -. #@@%+@@@*.=*.       -                 ..    :    
+        :             .    .#*+-=*#:    .   ..     @@%= +%%%:         ..                  -     :   
+        :           . :     :===+=:       .  .     =#+===+*+          :                   :.    :   
+        :           . :                             :----:.          :                     :    :   
+        :           : .                                             :                      :    :   
+         -           ::          .                                .:                       :    =:  
+          :           .:.     .            .:  ...               :.                        :    - ..
+           :      :.    :.                     .:...           .:                          :   :.   
+            :.     ...    :.                                 .-..           .             -   :     
+    . ....    ....    .... .:.                      .     .:-.            :.             .: .:      
+     .             . ...     .-=:                    -=++-            :=+=               : .        
+                   .:=+*++**######*+==-::::::--==+*%@%@%%%%%#**+++*#%#+:               .:.          
+
+"""
+
+ascii_label = tk.Label(root, text=ascii_art, font=("Courier", 3), justify=tk.LEFT)
+ascii_label.grid(row=20, column=0, sticky='W')
+
+# Start the main loop
+root.mainloop()
