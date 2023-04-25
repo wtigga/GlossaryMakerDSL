@@ -1,5 +1,8 @@
 # **Game Code Snippets Tool**
 
+![image](https://user-images.githubusercontent.com/7037184/234344587-228da490-5701-4fec-ba71-1ac4f562b596.png)
+
+
 ### Description
 
     • This tool will extract all the code snippets defined by regex, find their corresponding meaning in source and target language, and save as a glossary in Excel or as a dictionary in DSL (GoldenDict-compatible).
@@ -27,3 +30,4 @@ Finally, it stores it as either bilingual Excel or a GoldenDict / Lingvo diction
     2. Define the folder where your DSL file is located, click 'Rescan now', and close settings.
     3. While you're in the browser CAT and stumble upon a code snippet, copy (Ctrl+C) the code and use the hotkey (like Ctrl+C+C defined above) to call GoldenDict:
     4. Click on the 'Close words':
+    
