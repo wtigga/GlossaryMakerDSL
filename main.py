@@ -13,8 +13,8 @@ import threading
 from tkinter.messagebox import showinfo
 import webbrowser
 
-script_version = '0.1'
-modification_date = '2023-04-25'
+script_version = '0.2'
+modification_date = '2023-04-26'
 script_name_short = 'GCG Term Extractor'
 script_name = str(script_name_short + ', v' + script_version + ', ' + modification_date)
 
@@ -283,6 +283,14 @@ def remove_empty_values(dct):
     return {key: value for key, value in dct.items() if value != ""}
 
 
+def clean_dict_keys(input_dict):
+    cleaned_dict = {}
+    for key, value in input_dict.items():
+        cleaned_key = key.replace('$', '').replace('[', '').replace(']', '')
+        cleaned_dict[cleaned_key] = value
+    return cleaned_dict
+
+
 def merge_dicts(dict1, dict2):
     return {**dict1, **dict2}
 
@@ -445,7 +453,7 @@ def batch_execute():
 
 def start_batch_processing():
     task_thread = threading.Thread(target=batch_processing, args=(
-    folder_content_files, source_lang_column_name, target_lang_column_name, comment_column_name))
+        folder_content_files, source_lang_column_name, target_lang_column_name, comment_column_name))
     task_thread.start()
 
 
@@ -481,6 +489,10 @@ def save_to_excel():
 
 def save_to_dsl():
     try:
+        global code_and_source_output
+        global main_dict_for_output
+        code_and_source_output = clean_dict_keys(code_and_source_output)
+        main_dict_for_output = clean_dict_keys(main_dict_for_output)
         save_dictionaries_to_file_v4(code_and_source_output, main_dict_for_output, output_file_dsl.get())
         print('Saved to DSL!')
     except Exception as e:
