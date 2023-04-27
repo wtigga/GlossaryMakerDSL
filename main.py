@@ -6,20 +6,19 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import Entry, filedialog, StringVar
 import sys
-import xlsxwriter
 import glob
 import os
 import threading
 from tkinter.messagebox import showinfo
 import webbrowser
 
-script_version = '0.2'
-modification_date = '2023-04-26'
+script_version = '0.3'
+modification_date = '2023-04-27'
 script_name_short = 'GCG Term Extractor'
 script_name = str(script_name_short + ', v' + script_version + ', ' + modification_date)
 
 
-# This is a script to create a DSL dictionary from crappy source translation files.
+# This is a script to extract terms from a crappy lockit and made a DSL dictionary out of it.
 
 def current_date():
     # Get the current date
@@ -284,6 +283,7 @@ def remove_empty_values(dct):
 
 
 def clean_dict_keys(input_dict):
+    # This is because GoldenDict won't search properly when [ or ] are presented. And $ is also a goner, why keep it.
     cleaned_dict = {}
     for key, value in input_dict.items():
         cleaned_key = key.replace('$', '').replace('[', '').replace(']', '')
@@ -362,15 +362,18 @@ def browse_folder():
 
 
 def browse_dsl_output():
-    default_name = "dictionary_" + source_lang_column_name + "_" + target_lang_column_name + "_" + str(today) + ".dsl"
-    file_path = filedialog.asksaveasfilename(filetypes=[("DSL Lingvo Dict", "*.dsl")], defaultextension=".dsl",
-                                             initialfile=default_name)
-    if file_path:
-        output_file_dsl.set(file_path)
-        file_path_entry_output_dsl.config(state="normal")
-        file_path_entry_output_dsl.delete(0, tk.END)
-        file_path_entry_output_dsl.insert(0, file_path)
-        file_path_entry_output_dsl.config(state="readonly")
+    try:
+        default_name = "dictionary_" + source_lang_column_name + "_" + target_lang_column_name + "_" + str(today) + ".dsl"
+        file_path = filedialog.asksaveasfilename(filetypes=[("DSL Lingvo Dict", "*.dsl")], defaultextension=".dsl",
+                                                 initialfile=default_name)
+        if file_path:
+            output_file_dsl.set(file_path)
+            file_path_entry_output_dsl.config(state="normal")
+            file_path_entry_output_dsl.delete(0, tk.END)
+            file_path_entry_output_dsl.insert(0, file_path)
+            file_path_entry_output_dsl.config(state="readonly")
+    except Exception as e:
+        print("An error occurred while browsing for the DSL output file:", e)
 
 
 def browse_file_excel_output():
@@ -499,6 +502,7 @@ def save_to_dsl():
         print(f'An error occurred: {e}')
 
 
+# GUI part
 # Initialize the main window
 root = tk.Tk()
 root.geometry("440x680")
@@ -552,7 +556,7 @@ comment_label.grid(row=4, column=0, sticky="W", padx=(20, 0), pady=10)
 comment_combobox.grid(row=4, column=0, sticky='W', padx=125)
 
 # Create the Execute button
-execute_button = ttk.Button(root, text="Process files", command=start_batch_processing, width="30")
+execute_button = ttk.Button(root, text="Process files", command=start_batch_processing, width=30)
 execute_button.grid(row=5, column=0, padx=20, pady=5, sticky='w')
 
 # Browse output file  and file path entry
